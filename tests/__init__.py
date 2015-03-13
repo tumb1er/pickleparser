@@ -2,4 +2,5 @@
 
 # $Id: $
 
+from test_parse import *
 

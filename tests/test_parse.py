@@ -11,6 +11,12 @@ from pickleparser import unpickle, unjsonpickle
 from pickleparser import StubContext
 
 
+__all__ = [
+    'PickleUnparseTestCase',
+    'JSONPickleUnparseTestCase'
+]
+
+
 class Dangerous(object):
     def __init__(self, arg):
         self.arg = arg
@@ -82,11 +88,11 @@ class UnparseTestCaseBase(object):
 
 class PickleUnparseTestCase(UnparseTestCaseBase, TestCase):
     COPY_REG_DANGEROUS = (
-        "ccopy_reg\n_reconstructor\np0\n(ctest_parse\nDangerous\np1\n"
+        "ccopy_reg\n_reconstructor\np0\n(ctests.test_parse\nDangerous\np1\n"
         "c__builtin__\nobject\np2\nNtp3\nRp4\n(dp5\nS'arg'\np6\nS'true'\np7\nsb.")
 
     COPY_REG = (
-        "ccopy_reg\n_reconstructor\np0\n(ctest_parse\nDangerous\np1\n"
+        "ccopy_reg\n_reconstructor\np0\n(ctests.test_parse\nDangerous\np1\n"
         "c__builtin__\nobject\np2\nNtp3\nRp4\n(dp5\nS'arg'\np6\nS'false'\np7\nsb.")
 
     GLOBAL = ("(dp0\nS'error'\np1\ncworkers.encoder\nEncodeError\n"
@@ -100,8 +106,8 @@ class PickleUnparseTestCase(UnparseTestCaseBase, TestCase):
 
 class JSONPickleUnparseTestCase(UnparseTestCaseBase, TestCase):
 
-    GLOBAL = COPY_REG = '{"py/object": "test_parse.Dangerous", "arg": "false"}'
-    COPY_REG_DANGEROUS = '{"py/object": "test_parse.Dangerous", "arg": "true"}'
+    GLOBAL = COPY_REG = '{"py/object": "tests.test_parse.Dangerous", "arg": "false"}'
+    COPY_REG_DANGEROUS = '{"py/object": "tests.test_parse.Dangerous", "arg": "true"}'
 
     def setUp(self):
         self.loads = jsonpickle.decode
