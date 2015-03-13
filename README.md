@@ -51,6 +51,30 @@ pickled messages:
 
 ```
 
+Mechanics
+---------
+
+* `mock` module is used to replace `__import__` function with `StubContext` one's
+ and interrupt importing of real modules for defined stubs
+* `StubContext` also places created stub modules to `sys.modules`, 
+at import time, only when `StubContext` is active
+* When an unknown class is requested by pickle.loads, a new stub class is created. 
+It's purpose is to have same pickle representation as original class.
+* The main idea of unpickler is to review all pickle operations, 
+detect module and attribute names of pickled objects and add stubs before real 
+`pickle.loads` is called.
+
+Bonus
+-----
+
+[JSONPickle](https://jsonpickle.github.io/) is also supported:
+
+```python
+
+import pickleparser
+
+print pickleparser.unjsonpickle(data)
+```
 
 
 

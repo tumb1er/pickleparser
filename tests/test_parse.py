@@ -37,11 +37,6 @@ class Dangerous(object):
 
 class UnparseTestCaseBase(object):
 
-    def setUp(self):
-        self.loads = jsonpickle.decode
-        self.dumps = jsonpickle.encode
-        self.unparse = unjsonpickle
-
     def check_parcel(self, parcel):
         with StubContext():
             stub = self.unparse(parcel)
@@ -103,6 +98,15 @@ class PickleUnparseTestCase(UnparseTestCaseBase, TestCase):
         self.dumps = pickle.dumps
         self.unparse = unpickle
 
+    def testNotInContext(self):
+        """ Проверяет, что после выхода из контекста, неизвестные модули
+        все еще отваливаются с ImportError."""
+        unknown_class = self.COPY_REG_DANGEROUS.replace(
+            "tests.test_parse", "unknown.module")
+        self.check_parcel(unknown_class)
+        with self.assertRaises(ImportError):
+            self.loads(unknown_class)
+
 
 class JSONPickleUnparseTestCase(UnparseTestCaseBase, TestCase):
 
@@ -113,4 +117,14 @@ class JSONPickleUnparseTestCase(UnparseTestCaseBase, TestCase):
         self.loads = jsonpickle.decode
         self.dumps = jsonpickle.encode
         self.unparse = unjsonpickle
+
+    def testNotInContext(self):
+        """ Проверяет, что после выхода из контекста, неизвестные модули
+        остаются неизвестными."""
+        unknown_class = self.COPY_REG_DANGEROUS.replace(
+            "tests.test_parse", "unknown.module")
+        expected = self.loads(unknown_class)
+        self.check_parcel(unknown_class)
+        after = self.loads(unknown_class)
+        self.assertDictEqual(after, expected)
 

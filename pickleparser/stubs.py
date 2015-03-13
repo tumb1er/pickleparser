@@ -31,18 +31,22 @@ class PickleCallableStub(CallableStub):
 class StubContext(object):
     stubbed_modules = {}
 
+    context = None
+
     def __enter__(self):
         self.p = mock.patch('__builtin__.__import__',
                             side_effect=self.import_mock)
         self.p.start()
 
         self.backup_modules = {}
+        self.prev_context = self.__class__.context
+        self.__class__.context = self
 
     def __exit__(self, *args):
         # Возвращаем на место заменненные на заглушки модули.
         # Если до импорта внутри контекста модуля не было,
         # удаляем его из sys.modules
-
+        self.__class__.context = self.prev_context
         for module_name, old in self.backup_modules.items():
             if old is not None:
                 sys.modules[module_name] = old
@@ -52,7 +56,7 @@ class StubContext(object):
         self.p.stop()
 
     def import_mock(self, name, *args, **kwargs):
-        if name in self.stubbed_modules:
+        if self.context and name in self.stubbed_modules:
             if name in sys.modules:
                 self.backup_modules[name] = sys.modules[name]
             else:
