@@ -40,12 +40,12 @@ pickled messages:
 ```python
 >>> import pickleparser
 >>> with pickleparser.StubContext():
-...   data = unpickle(rpc_result)
+...   data = pickleparser.unpickle(rpc_result)
 ...   print(data['error'])
 ...   data['result'] = 'success'
 ...   patched = pickle.dumps(data)
 ... 
-< django.core.exceptions.ValidationError object at 0x7f92f52018d0>
+<django.core.exceptions.ValidationError object at 0x7f92f52018d0>
 
 ```
 
