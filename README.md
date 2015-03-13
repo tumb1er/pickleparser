@@ -3,6 +3,8 @@ PickleParser
 
 A package used for getting a preview object for pickle string.
 
+[![Build Status](https://travis-ci.org/tumb1er/pickleparser.svg)](https://travis-ci.org/tumb1er/pickleparser)
+
 Example of a problem
 --------------------
 
