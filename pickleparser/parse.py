@@ -4,7 +4,6 @@
 import json
 import pickle
 from pickletools import genops
-from pprint import pprint
 from pickleparser.stubs import StubContext
 
 
@@ -15,7 +14,6 @@ excluded = [
 
 def unpickle(data):
     for opcode, arg, pos in genops(data):
-        print opcode.name, arg
         if opcode.name == "GLOBAL":
             module_name, attr_name = arg.split(' ')
             if module_name not in excluded:
@@ -44,7 +42,6 @@ def jsonpickle_check(obj):
 def unjsonpickle(data):
     import jsonpickle
     struct = json.loads(data)
-    pprint(struct)
     jsonpickle_check(struct)
     with StubContext():
         return jsonpickle.decode(data)

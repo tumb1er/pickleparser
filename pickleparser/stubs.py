@@ -5,6 +5,7 @@ import sys
 import types
 import mock
 
+
 orig_import = __import__
 
 
@@ -51,7 +52,6 @@ class StubContext(object):
         self.p.stop()
 
     def import_mock(self, name, *args, **kwargs):
-        print "requesting %s" % name
         if name in self.stubbed_modules:
             if name in sys.modules:
                 self.backup_modules[name] = sys.modules[name]
