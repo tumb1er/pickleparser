@@ -6,13 +6,14 @@ import pickle
 from pickletools import genops
 from pickleparser.stubs import StubContext
 
-
 excluded = [
     '__builtin__',
     'copy_reg'
 ]
 
 def unpickle(data):
+    if hasattr(data, 'encode'):
+        data = data.encode('utf-8')
     for opcode, arg, pos in genops(data):
         if opcode.name == "GLOBAL":
             module_name, attr_name = arg.split(' ')
@@ -28,7 +29,7 @@ def jsonpickle_check(obj):
             jsonpickle_check(item)
     if isinstance(obj, dict):
         maybe_object = obj.pop("py/object", None)
-        if isinstance(maybe_object, unicode):
+        if not isinstance(maybe_object, str):
             maybe_object = maybe_object.encode("utf-8")
         if maybe_object is not None:
             module_name, attr_name = maybe_object.rsplit('.', 1)

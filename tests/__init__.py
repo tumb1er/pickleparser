@@ -2,5 +2,5 @@
 
 # $Id: $
 
-from test_parse import *
+from .test_parse import *
 
