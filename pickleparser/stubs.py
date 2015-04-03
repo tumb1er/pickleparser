@@ -45,7 +45,8 @@ class StubContext(object):
     pickle_reloaded = False
 
     def reload_pickle(self):
-        """"""
+        """ Reload pickle module if not sure that pickle c-extension is
+        disabled."""
         if self.__class__.pickle_reloaded:
             return
 
