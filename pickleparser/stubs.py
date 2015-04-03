@@ -13,8 +13,12 @@ if PY3:
     # Выключаем C-extension для Pickle, т.к. оно использует другой способ
     # импорта.
     import pickle
-    pickle.loads = pickle._loads
-    pickle.load = pickle._load
+    try:
+        pickle.loads = pickle._loads
+        pickle.load = pickle._load
+    except AttributeError:
+        # В Py3.3 нет C-extension
+        pass
 else:
     builtins_module = '__builtin__'
 
