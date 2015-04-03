@@ -1,6 +1,7 @@
 # coding: utf-8
 
 # $Id: $
+from imp import reload
 import sys
 import types
 import mock
@@ -10,17 +11,9 @@ PY3 = sys.version_info[0] >= 3
 
 if PY3:
     builtins_module = 'builtins'
-    # Выключаем C-extension для Pickle, т.к. оно использует другой способ
-    # импорта.
-    import pickle
-    try:
-        pickle.loads = pickle._loads
-        pickle.load = pickle._load
-    except AttributeError:
-        # В Py3.3 нет C-extension
-        pass
 else:
     builtins_module = '__builtin__'
+
 
 orig_import = __import__
 
@@ -49,6 +42,19 @@ class StubContext(object):
 
     context = None
 
+    pickle_reloaded = False
+
+    def reload_pickle(self):
+        """"""
+        if self.__class__.pickle_reloaded:
+            return
+
+        # ensure that pickle is imported in StubContext without c-extension
+        import pickle
+
+        reload(pickle)
+        self.__class__.pickle_reloaded = True
+
     def __enter__(self):
         self.p = mock.patch('%s.__import__' % builtins_module,
                             side_effect=self.import_mock)
@@ -57,6 +63,7 @@ class StubContext(object):
         self.backup_modules = {}
         self.prev_context = self.__class__.context
         self.__class__.context = self
+        self.reload_pickle()
 
     def __exit__(self, *args):
         # Возвращаем на место заменненные на заглушки модули.
@@ -72,6 +79,8 @@ class StubContext(object):
         self.p.stop()
 
     def import_mock(self, name, *args, **kwargs):
+        if PY3 and name == '_pickle':
+            raise ImportError("cPickle is forbidden")
         if self.context and name in self.stubbed_modules:
             if name in sys.modules:
                 self.backup_modules[name] = sys.modules[name]
@@ -82,18 +91,15 @@ class StubContext(object):
         return orig_import(name, *args, **kwargs)
 
     @classmethod
-    def add_global_stub(cls, module_name, attr_name, with_reduce=True):
+    def add_global_stub(cls, module_name, attr_name=None, with_reduce=True):
         if module_name not in cls.stubbed_modules:
             module = types.ModuleType(module_name)
             cls.stubbed_modules[module_name] = module
         else:
             module = cls.stubbed_modules[module_name]
-        if getattr(module, attr_name, None) is None:
+        if attr_name and getattr(module, attr_name, None) is None:
             klass = PickleCallableStub if with_reduce else CallableStub
             attr = type(attr_name, (klass,), {"__module__" : module_name})
             setattr(module, attr_name, attr)
-
-
-
 
 
