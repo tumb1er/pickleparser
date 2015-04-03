@@ -4,11 +4,13 @@
 import pickle
 from unittest import TestCase
 import sys
+import json
 
 import jsonpickle
 
 from pickleparser import unpickle, unjsonpickle
 from pickleparser import StubContext
+from pickleparser.stubs import PY3
 
 
 __all__ = [
@@ -28,11 +30,11 @@ class Dangerous(object):
 
     @staticmethod
     def dump_jsonpickle():
-        print repr(jsonpickle.encode(Dangerous("false")))
+        print(repr(jsonpickle.encode(Dangerous("false"))))
 
     @staticmethod
     def dump_pickle():
-        print repr(pickle.dumps(Dangerous("false")))
+        print(repr(pickle.dumps(Dangerous("false"))))
 
 
 class UnparseTestCaseBase(object):
@@ -41,7 +43,7 @@ class UnparseTestCaseBase(object):
         with StubContext():
             stub = self.unparse(parcel)
             expected = self.dumps(stub)
-        self.assertEqual(parcel, expected)
+        self.assertParcelEqual(parcel, expected)
 
     def testImportError(self):
         """ Проверяет, как загружается и пересохраняется pickle с неизвестным
@@ -82,21 +84,42 @@ class UnparseTestCaseBase(object):
 
 
 class PickleUnparseTestCase(UnparseTestCaseBase, TestCase):
-    COPY_REG_DANGEROUS = (
-        "ccopy_reg\n_reconstructor\np0\n(ctests.test_parse\nDangerous\np1\n"
-        "c__builtin__\nobject\np2\nNtp3\nRp4\n(dp5\nS'arg'\np6\nS'true'\np7\nsb.")
 
     COPY_REG = (
         "ccopy_reg\n_reconstructor\np0\n(ctests.test_parse\nDangerous\np1\n"
         "c__builtin__\nobject\np2\nNtp3\nRp4\n(dp5\nS'arg'\np6\nS'false'\np7\nsb.")
 
-    GLOBAL = ("(dp0\nS'error'\np1\ncworkers.encoder\nEncodeError\n"
-              "p2\n(S'test'\np3\ntp4\nRp5\ns.")
+    if PY3:
+        COPY_REG_DANGEROUS = (
+            "ccopy_reg\n_reconstructor\np0\n(ctests.test_parse\nDangerous\np1\n"
+            "c__builtin__\nobject\np2\nNtp3\nRp4\n(dp5\nVarg\np6\nVtrue\np7\nsb.")
+        GLOBAL = ("(dp0\nVerror\np1\ncworkers.encoder\nEncodeError\np2\n"
+                  "(Vtest\np3\ntp4\nRp5\ns.")
+    else:
+        COPY_REG_DANGEROUS = (
+            "ccopy_reg\n_reconstructor\np0\n(ctests.test_parse\nDangerous\np1\n"
+            "c__builtin__\nobject\np2\nNtp3\nRp4\n(dp5\nS'arg'\np6\nS'true'\np7\nsb.")
+        GLOBAL = ("(dp0\nS'error'\np1\ncworkers.encoder\nEncodeError\np2\n"
+                  "(S'test'\np3\ntp4\nRp5\ns.")
 
     def setUp(self):
-        self.loads = pickle.loads
-        self.dumps = pickle.dumps
         self.unparse = unpickle
+
+    def dumps(self, data):
+        return pickle.dumps(data, protocol=0)
+
+    def loads(self, data):
+        if hasattr(data, 'encode'):
+            data = data.encode("utf-8")
+        return pickle.loads(data)
+
+    def assertParcelEqual(self, parcel, expected):
+        self.maxDiff = None
+        if hasattr(parcel, 'encode'):
+            parcel = parcel.encode('utf-8')
+        if hasattr(expected, 'encode'):
+            expected = expected.encode('utf-8')
+        self.assertEqual(parcel, expected)
 
     def testNotInContext(self):
         """ Проверяет, что после выхода из контекста, неизвестные модули
@@ -117,6 +140,11 @@ class JSONPickleUnparseTestCase(UnparseTestCaseBase, TestCase):
         self.loads = jsonpickle.decode
         self.dumps = jsonpickle.encode
         self.unparse = unjsonpickle
+
+    def assertParcelEqual(self, parcel, expected):
+        p_data = json.loads(parcel)
+        e_data = json.loads(expected)
+        self.assertEqual(p_data, e_data)
 
     def testNotInContext(self):
         """ Проверяет, что после выхода из контекста, неизвестные модули

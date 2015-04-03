@@ -5,6 +5,18 @@ import sys
 import types
 import mock
 
+PY3 = sys.version_info[0] >= 3
+
+
+if PY3:
+    builtins_module = 'builtins'
+    # Выключаем C-extension для Pickle, т.к. оно использует другой способ
+    # импорта.
+    import pickle
+    pickle.loads = pickle._loads
+    pickle.load = pickle._load
+else:
+    builtins_module = '__builtin__'
 
 orig_import = __import__
 
@@ -34,7 +46,7 @@ class StubContext(object):
     context = None
 
     def __enter__(self):
-        self.p = mock.patch('__builtin__.__import__',
+        self.p = mock.patch('%s.__import__' % builtins_module,
                             side_effect=self.import_mock)
         self.p.start()
 

@@ -4,4 +4,4 @@
 
 
 from .parse import unpickle, unjsonpickle
-from stubs import StubContext
+from .stubs import StubContext
