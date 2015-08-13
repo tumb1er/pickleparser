@@ -67,13 +67,15 @@ detect module and attribute names of pickled objects and add stubs before real
 Bonus
 -----
 
-[JSONPickle](https://jsonpickle.github.io/) is also supported:
+[JSONPickle](https://jsonpickle.github.io/) and [YAML](http://pyyaml.org/wiki/PyYAML) are also supported:
 
 ```python
 
 import pickleparser
 
 print pickleparser.unjsonpickle(data)
+print pickleparser.unyaml(data)
+
 ```
 
 
