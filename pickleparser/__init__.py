@@ -3,5 +3,5 @@
 # $Id: $
 
 
-from .parse import unpickle, unjsonpickle
+from .parse import unpickle, unjsonpickle, unyaml
 from .stubs import StubContext

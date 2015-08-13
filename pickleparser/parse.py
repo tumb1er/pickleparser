@@ -4,6 +4,7 @@
 import json
 import pickle
 from pickletools import genops
+from yaml import nodes
 
 from pickleparser.stubs import StubContext
 
@@ -57,6 +58,21 @@ def _jsonpickle_check(obj):
             _jsonpickle_check(item)
 
 
+def _yaml_check(node):
+    YAML_PY_OBJECT = 'tag:yaml.org,2002:python/object:'
+    if node.tag.startswith(YAML_PY_OBJECT):
+        tag_suffix = node.tag[len(YAML_PY_OBJECT):]
+        module_name, attr_name = tag_suffix.rsplit('.', 1)
+        if module_name not in excluded:
+            StubContext.add_global_stub(module_name, attr_name,
+                                        with_reduce=False)
+    if isinstance(node, nodes.MappingNode):
+        for k, v in node.value:
+            _yaml_check(k)
+            _yaml_check(v)
+    else:
+        pass
+
 def unjsonpickle(data):
     struct = json.loads(data)
     # scan JSON object for py/object class paths and add global stubs for them.
@@ -66,3 +82,11 @@ def unjsonpickle(data):
     # Run import in safe context
     with StubContext():
         return jsonpickle.decode(data)
+
+
+def unyaml(data):
+    import yaml
+    loader = yaml.Loader(data)
+    node = loader.get_single_node()
+    _yaml_check(node)
+    return yaml.load(data)

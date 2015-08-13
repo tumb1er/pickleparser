@@ -6,16 +6,18 @@ from unittest import TestCase
 import sys
 import json
 
+import yaml
 import jsonpickle
 
-from pickleparser import unpickle, unjsonpickle
+from pickleparser import unpickle, unjsonpickle, unyaml
 from pickleparser import StubContext
 from pickleparser.stubs import PY3
 
 
 __all__ = [
     'PickleUnparseTestCase',
-    'JSONPickleUnparseTestCase'
+    'JSONPickleUnparseTestCase',
+    'YAMLUnparseTestCase'
 ]
 
 
@@ -35,6 +37,10 @@ class Dangerous(object):
     @staticmethod
     def dump_pickle():
         print(repr(pickle.dumps(Dangerous("false"))))
+
+    @staticmethod
+    def dump_yaml():
+        print(repr(yaml.dump(Dangerous("false"))))
 
 
 class UnparseTestCaseBase(object):
@@ -155,4 +161,24 @@ class JSONPickleUnparseTestCase(UnparseTestCaseBase, TestCase):
         self.check_parcel(unknown_class)
         after = self.loads(unknown_class)
         self.assertDictEqual(after, expected)
+
+
+class YAMLUnparseTestCase(UnparseTestCaseBase, TestCase):
+
+    GLOBAL = COPY_REG = "!!python/object:tests.test_parse.Dangerous {arg: 'false'}\n"
+    COPY_REG_DANGEROUS = "!!python/object:tests.test_parse.Dangerous {arg: 'true'}\n"
+
+    def setUp(self):
+        self.loads = yaml.load
+        self.dumps = yaml.dump
+        self.unparse = unyaml
+
+    def assertParcelEqual(self, parcel, expected):
+        self.maxDiff = None
+        if hasattr(parcel, 'encode'):
+            parcel = parcel.encode('utf-8')
+        if hasattr(expected, 'encode'):
+            expected = expected.encode('utf-8')
+        self.assertEqual(parcel, expected)
+
 

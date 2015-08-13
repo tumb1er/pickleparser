@@ -2,7 +2,7 @@ from distutils.core import setup
 
 setup(
     name='pickleparser',
-    version='0.2',
+    version='0.3',
     packages=['pickleparser'],
     url='https://github.com/tumb1er/pickleparser/',
     license='Beer license',
