@@ -10,7 +10,7 @@ from pickleparser.stubs import StubContext
 
 
 excluded = [
-    '__builtin__',
+    'builtins',
     'copy_reg'
 ]
 
