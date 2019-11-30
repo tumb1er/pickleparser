@@ -6,11 +6,11 @@ import pickle
 from pickletools import genops
 from yaml import nodes
 
-from pickleparser.stubs import StubContext
+from pickleparser.stubs import StubContext, builtins_module
 
 
 excluded = [
-    'builtins',
+    builtins_module,
     'copy_reg'
 ]
 
