@@ -1,8 +1,8 @@
-from distutils.core import setup
+from setuptools import setup
 
 setup(
     name='pickleparser',
-    version='0.3',
+    version='0.5',
     packages=['pickleparser'],
     url='https://github.com/tumb1er/pickleparser/',
     license='Beer license',

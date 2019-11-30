@@ -83,16 +83,23 @@ class StubContext(object):
         if PY3 and name == '_pickle':
             raise ImportError("cPickle is forbidden")
         if self.context and name in self.stubbed_modules:
-            if name in sys.modules:
-                self.backup_modules[name] = sys.modules[name]
-            else:
-                self.backup_modules[name] = None
-            sys.modules[name] = self.stubbed_modules[name]
+            self.stub_module(name)
             return self.stubbed_modules[name]
         return orig_import(name, *args, **kwargs)
 
+    def stub_module(self, name):
+        if name in self.backup_modules:
+            return
+        if name in sys.modules:
+            self.backup_modules[name] = sys.modules[name]
+        else:
+            self.backup_modules[name] = None
+        sys.modules[name] = self.stubbed_modules[name]
+
     @classmethod
     def add_global_stub(cls, module_name, attr_name=None, with_reduce=True):
+        if not cls.context:
+            raise RuntimeError("Called without context")
         if module_name not in cls.stubbed_modules:
             module = types.ModuleType(module_name)
             cls.stubbed_modules[module_name] = module
@@ -102,5 +109,6 @@ class StubContext(object):
             klass = PickleCallableStub if with_reduce else CallableStub
             attr = type(attr_name, (klass,), {"__module__" : module_name})
             setattr(module, attr_name, attr)
+        cls.context.stub_module(module_name)
 
 

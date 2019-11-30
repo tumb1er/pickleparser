@@ -21,28 +21,6 @@ __all__ = [
 ]
 
 
-class Dangerous(object):
-    def __init__(self, arg):
-        self.arg = arg
-
-    def __repr__(self):
-        if self.arg == "true":
-            raise ValueError("Dangerous")
-        return super(Dangerous, self).__repr__()
-
-    @staticmethod
-    def dump_jsonpickle():
-        print(repr(jsonpickle.encode(Dangerous("false"))))
-
-    @staticmethod
-    def dump_pickle():
-        print(repr(pickle.dumps(Dangerous("false"))))
-
-    @staticmethod
-    def dump_yaml():
-        print(repr(yaml.dump(Dangerous("false"))))
-
-
 class UnparseTestCaseBase(object):
 
     def check_parcel(self, parcel):
@@ -60,15 +38,15 @@ class UnparseTestCaseBase(object):
         """ Проверяет что если в pickle есть глобальный объект с известным
         классом, то при разборе pickle вместо исходного класса используется
         заглушка."""
+        import tests.stubs
         with self.assertRaises(ValueError):
             d = self.loads(self.COPY_REG_DANGEROUS)
             repr(d)
 
-        with StubContext():
-            d = self.unparse(self.COPY_REG_DANGEROUS)
-            repr(d)
+        d = self.unparse(self.COPY_REG_DANGEROUS)
+        repr(d)
 
-        m = sys.modules[self.__module__]
+        m = sys.modules['tests.stubs']
         self.assertTrue(hasattr(m, "Dangerous"))
 
     def testImportReconstructor(self):
@@ -92,18 +70,18 @@ class UnparseTestCaseBase(object):
 class PickleUnparseTestCase(UnparseTestCaseBase, TestCase):
 
     COPY_REG = (
-        "ccopy_reg\n_reconstructor\np0\n(ctests.test_parse\nDangerous\np1\n"
+        "ccopy_reg\n_reconstructor\np0\n(ctests.stubs\nDangerous\np1\n"
         "c__builtin__\nobject\np2\nNtp3\nRp4\n(dp5\nS'arg'\np6\nS'false'\np7\nsb.")
 
     if PY3:
         COPY_REG_DANGEROUS = (
-            "ccopy_reg\n_reconstructor\np0\n(ctests.test_parse\nDangerous\np1\n"
+            "ccopy_reg\n_reconstructor\np0\n(ctests.stubs\nDangerous\np1\n"
             "c__builtin__\nobject\np2\nNtp3\nRp4\n(dp5\nVarg\np6\nVtrue\np7\nsb.")
         GLOBAL = ("(dp0\nVerror\np1\ncworkers.encoder\nEncodeError\np2\n"
                   "(Vtest\np3\ntp4\nRp5\ns.")
     else:
         COPY_REG_DANGEROUS = (
-            "ccopy_reg\n_reconstructor\np0\n(ctests.test_parse\nDangerous\np1\n"
+            "ccopy_reg\n_reconstructor\np0\n(ctests.stubs\nDangerous\np1\n"
             "c__builtin__\nobject\np2\nNtp3\nRp4\n(dp5\nS'arg'\np6\nS'true'\np7\nsb.")
         GLOBAL = ("(dp0\nS'error'\np1\ncworkers.encoder\nEncodeError\np2\n"
                   "(S'test'\np3\ntp4\nRp5\ns.")
@@ -131,7 +109,7 @@ class PickleUnparseTestCase(UnparseTestCaseBase, TestCase):
         """ Проверяет, что после выхода из контекста, неизвестные модули
         все еще отваливаются с ImportError."""
         unknown_class = self.COPY_REG_DANGEROUS.replace(
-            "tests.test_parse", "unknown.module")
+            "tests.stubs", "unknown.module")
         self.check_parcel(unknown_class)
         with self.assertRaises(ImportError):
             self.loads(unknown_class)
@@ -139,8 +117,8 @@ class PickleUnparseTestCase(UnparseTestCaseBase, TestCase):
 
 class JSONPickleUnparseTestCase(UnparseTestCaseBase, TestCase):
 
-    GLOBAL = COPY_REG = '{"py/object": "tests.test_parse.Dangerous", "arg": "false"}'
-    COPY_REG_DANGEROUS = '{"py/object": "tests.test_parse.Dangerous", "arg": "true"}'
+    GLOBAL = COPY_REG = '{"py/object": "tests.stubs.Dangerous", "arg": "false"}'
+    COPY_REG_DANGEROUS = '{"py/object": "tests.stubs.Dangerous", "arg": "true"}'
 
     def setUp(self):
         self.loads = jsonpickle.decode
@@ -156,7 +134,7 @@ class JSONPickleUnparseTestCase(UnparseTestCaseBase, TestCase):
         """ Проверяет, что после выхода из контекста, неизвестные модули
         остаются неизвестными."""
         unknown_class = self.COPY_REG_DANGEROUS.replace(
-            "tests.test_parse", "unknown.module")
+            "tests.stubs", "unknown.module")
         expected = self.loads(unknown_class)
         self.check_parcel(unknown_class)
         after = self.loads(unknown_class)
@@ -165,8 +143,8 @@ class JSONPickleUnparseTestCase(UnparseTestCaseBase, TestCase):
 
 class YAMLUnparseTestCase(UnparseTestCaseBase, TestCase):
 
-    GLOBAL = COPY_REG = "!!python/object:tests.test_parse.Dangerous {arg: 'false'}\n"
-    COPY_REG_DANGEROUS = "!!python/object:tests.test_parse.Dangerous {arg: 'true'}\n"
+    GLOBAL = COPY_REG = "!!python/object:tests.stubs.Dangerous\narg: 'false'\n"
+    COPY_REG_DANGEROUS = "!!python/object:tests.stubs.Dangerous\narg: 'true'\n"
 
     def setUp(self):
         self.loads = yaml.load

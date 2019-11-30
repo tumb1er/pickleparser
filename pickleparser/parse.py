@@ -22,14 +22,14 @@ def unpickle(data):
     # forcing bytes for PY3
     if hasattr(data, 'encode'):
         data = data.encode('utf-8')
-    # preliminary add module mocks for all GLOBAL tokens in pickled data
-    for opcode, arg, pos in genops(data):
-        if opcode.name == "GLOBAL":
-            module_name, attr_name = arg.split(' ')
-            if module_name not in excluded:
-                StubContext.add_global_stub(module_name, attr_name)
     # Run import in safe context
     with StubContext():
+        # preliminary add module mocks for all GLOBAL tokens in pickled data
+        for opcode, arg, pos in genops(data):
+            if opcode.name == "GLOBAL":
+                module_name, attr_name = arg.split(' ')
+                if module_name not in excluded:
+                    StubContext.add_global_stub(module_name, attr_name)
         return pickle.loads(data)
 
 
@@ -60,8 +60,9 @@ def _jsonpickle_check(obj):
 
 def _yaml_check(node):
     YAML_PY_OBJECT = 'tag:yaml.org,2002:python/object:'
-    if node.tag.startswith(YAML_PY_OBJECT):
-        tag_suffix = node.tag[len(YAML_PY_OBJECT):]
+    tag = str(node.tag)
+    if tag.startswith(YAML_PY_OBJECT):
+        tag_suffix = tag[len(YAML_PY_OBJECT):]
         module_name, attr_name = tag_suffix.rsplit('.', 1)
         if module_name not in excluded:
             StubContext.add_global_stub(module_name, attr_name,
@@ -75,12 +76,11 @@ def _yaml_check(node):
 
 def unjsonpickle(data):
     struct = json.loads(data)
-    # scan JSON object for py/object class paths and add global stubs for them.
-    _jsonpickle_check(struct)
-
     import jsonpickle
     # Run import in safe context
     with StubContext():
+        # scan JSON object for py/object class paths and add global stubs for them.
+        _jsonpickle_check(struct)
         return jsonpickle.decode(data)
 
 
@@ -88,5 +88,6 @@ def unyaml(data):
     import yaml
     loader = yaml.Loader(data)
     node = loader.get_single_node()
-    _yaml_check(node)
-    return yaml.load(data)
+    with StubContext():
+        _yaml_check(node)
+        return yaml.load(data)
